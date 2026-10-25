@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Auth backend test page (XAMPP)</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 46rem; margin: 2rem auto; padding: 0 1rem; color: #1d2b36; }
+    button, a.btn { padding: .55rem .9rem; margin: .25rem .25rem .25rem 0; border: 1px solid #9aa8b3; border-radius: 4px; background: #fff; font: inherit; cursor: pointer; text-decoration: none; color: inherit; display: inline-block; }
+    pre { background: #10202b; color: #dbe7ef; padding: 1rem; border-radius: 4px; overflow-x: auto; min-height: 6rem; }
+    #banner { padding: .6rem 1rem; border-left: 4px solid #526270; background: #eef2f5; margin: 1rem 0; }
+    .note { color: #526270; font-size: .9rem; }
+  </style>
+</head>
+<body>
+  <h1>Auth backend test page</h1>
+  <p class="note">Served by XAMPP (Apache). It only calls the Express backend; it contains no secrets and no provider logic.</p>
+  <div id="banner" role="status" aria-live="polite">No login result yet.</div>
+
+  <h2>1. Sign in (full-page redirect to the backend)</h2>
+  <a class="btn" id="google">Sign in with Google</a>
+  <a class="btn" id="microsoft">Sign in with Microsoft</a>
+
+  <h2>2. Call the API (fetch with cookies)</h2>
+  <button data-path="/health">GET /health</button>
+  <button data-path="/auth/session">GET /auth/session</button>
+  <button data-path="/api/profile">GET /api/profile</button>
+  <button data-path="/api/protected/example">GET /api/protected/example</button>
+  <button data-path="/api/admin/report">GET /api/admin/report</button>
+  <button id="logout">POST /auth/logout</button>
+
+  <h2>Response</h2>
+  <pre id="out">(nothing yet)</pre>
+
+<script>
+  // Must match BACKEND_URL in backend/.env. Use "localhost" in both places (not 127.0.0.1).
+  const BACKEND = 'http://localhost:5000';
+  const out = document.getElementById('out');
+
+  document.getElementById('google').href = BACKEND + '/auth/google?client=xampp';
+  document.getElementById('microsoft').href = BACKEND + '/auth/microsoft?client=xampp';
+
+  // The backend redirects back here with ?result=success|denied|error&reason=...
+  const params = new URLSearchParams(location.search);
+  if (params.has('result')) {
+    const reason = params.get('reason');
+    document.getElementById('banner').textContent =
+      'Login result: ' + params.get('result') + (reason ? ' (reason: ' + reason + ')' : '');
+    history.replaceState(null, '', location.pathname); // tidy the URL
+  }
+
+  async function call(path, method = 'GET') {
+    out.textContent = method + ' ' + path + ' ...';
+    try {
+      const res = await fetch(BACKEND + path, { method, credentials: 'include' }); // credentials: send the session cookie
+      const text = await res.text();
+      out.textContent = method + ' ' + path + '\nHTTP ' + res.status + '\n' + text;
+    } catch (err) {
+      out.textContent = 'Request failed (backend not running, or blocked by CORS): ' + err.message;
+    }
+  }
+  document.querySelectorAll('button[data-path]').forEach((b) => b.addEventListener('click', () => call(b.dataset.path)));
+  document.getElementById('logout').addEventListener('click', () => call('/auth/logout', 'POST'));
+</script>
+</body>
+</html>
