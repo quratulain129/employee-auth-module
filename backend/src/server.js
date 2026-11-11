@@ -1,5 +1,13 @@
 import { createApp } from './app.js';
 import { config } from './config/env.js';
+import { initDb } from './services/db.js';
+
+try {
+  await initDb();
+} catch (err) {
+  console.warn(`[database] Could not connect to PostgreSQL: ${err.message}`);
+  console.warn('[database] Continuing in fallback mode (logging to auth.log). Web app remains online.');
+}
 
 createApp().listen(config.port, () => {
   const line = (label, ok) => `  ${label}: ${ok ? 'configured' : 'NOT configured (login button will show an error)'}`;

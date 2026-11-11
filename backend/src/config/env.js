@@ -30,13 +30,13 @@ const port = posInt(e.PORT, 5000);
 if (!e.SESSION_SECRET || e.SESSION_SECRET.length < 32 || isPlaceholder(e.SESSION_SECRET)) {
   throw new Error(
     'SESSION_SECRET is missing or too short (min 32 chars). Generate one with: ' +
-      `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+    `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
   );
 }
 
 const backendUrl = stripSlash(e.BACKEND_URL) || `http://localhost:${port}`;
-const frontendUrl = stripSlash(e.FRONTEND_URL) || 'http://localhost:5173';
-const xamppTestUrl = (e.XAMPP_TEST_URL || 'http://localhost/pl-auth-test/auth-test.html').trim();
+const frontendUrl = stripSlash(e.FRONTEND_URL) || backendUrl;
+const xamppTestUrl = (e.XAMPP_TEST_URL || `${backendUrl}/auth-test.html`).trim();
 
 const googleReady = !isPlaceholder(e.GOOGLE_CLIENT_ID) && !isPlaceholder(e.GOOGLE_CLIENT_SECRET);
 const msTenant = (e.MS_TENANT_ID || '').trim();
@@ -47,11 +47,19 @@ export const config = {
   env,
   isProd,
   port,
+  serveStatic: e.SERVE_STATIC === 'true',
+  databaseUrl: e.DATABASE_URL || '', // empty = run without a database
   backendUrl,
   frontendUrl,
   xamppTestUrl,
-  trustProxy: e.TRUST_PROXY === 'true', // set only when deployed behind a reverse proxy
-  corsOrigins: [...new Set([new URL(frontendUrl).origin, new URL(xamppTestUrl).origin])],
+  corsOrigins: [
+    ...new Set([
+      new URL(frontendUrl).origin,
+      new URL(backendUrl).origin,
+      new URL(xamppTestUrl).origin,
+      'http://localhost:5173',
+    ]),
+  ],
   session: {
     secret: e.SESSION_SECRET,
     cookieName: 'pl_auth.sid',

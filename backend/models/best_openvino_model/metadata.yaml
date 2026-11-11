@@ -1,0 +1,25 @@
+description: Ultralytics YOLO26n model trained on /content/datasets/cap/cap_data.yaml
+author: Ultralytics
+date: '2026-10-18T19:18:46.173196+00:00'
+version: 8.4.182
+license: AGPL-3.0 License (https://ultralytics.com/license)
+docs: https://docs.ultralytics.com
+stride: 32
+task: detect
+head: Detect
+batch: 1
+imgsz:
+- 640
+- 640
+names:
+  0: No cap
+  1: cap
+args:
+  data: null
+  batch: 1
+  fraction: 1.0
+  quantize: null
+  nms: null
+  dynamic: false
+channels: 3
+end2end: false

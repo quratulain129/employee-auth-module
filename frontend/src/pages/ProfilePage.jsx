@@ -47,6 +47,32 @@ export default function ProfilePage() {
           </p>
         </div>
       </section>
+
+      <section className="card tools-hub-card" aria-labelledby="tools-title">
+        <div className="section-head">
+          <h2 id="tools-title">Employee Tools & Modules</h2>
+          <p className="muted">Select an authorized application to launch.</p>
+        </div>
+
+        <div className="tool-grid">
+          <article className="tool-card">
+            <div className="tool-card-icon" aria-hidden="true">🧢</div>
+            <div className="tool-card-content">
+              <div className="tool-card-header">
+                <h3>Cap Detection</h3>
+                <span className="badge badge-tool">OpenVINO / YOLO</span>
+              </div>
+              <button
+                type="button"
+                className="btn btn-primary btn-sm"
+                onClick={() => navigate('/tools/cap-detection')}
+              >
+                Launch Tool →
+              </button>
+            </div>
+          </article>
+        </div>
+      </section>
     </>
   );
 }

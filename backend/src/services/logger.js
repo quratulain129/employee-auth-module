@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import winston from 'winston';
 import { config } from '../config/env.js';
+import { saveEvent } from './db.js';
 
 fs.mkdirSync(path.dirname(config.logFile), { recursive: true });
 
@@ -34,13 +35,25 @@ export const EVENTS = {
   SESSION_EXPIRED: 'SESSION_EXPIRED',
 };
 
-export function logAuthEvent(event, { provider, email, reason, req, path: reqPath } = {}) {
-    const level = [EVENTS.LOGIN_SUCCESS, EVENTS.LOGOUT, EVENTS.SESSION_ENDED].includes(event) ? 'info' : 'warn';
+export function logAuthEvent(event, { provider, email, reason, req, path: reqPath, userId, durationSeconds } = {}) {
+  const level = event === EVENTS.LOGIN_SUCCESS || event === EVENTS.LOGOUT ? 'info' : 'warn';
   fileLogger.log(level, event, {
     provider,
     user: maskEmail(email),
     reason,
     path: reqPath,
+    durationSeconds,
     ip: req?.ip,
+  });
+  saveEvent({
+    event,
+    provider,
+    userId,
+    email,
+    reason,
+    ip: req?.ip,
+    durationSeconds,
+    userAgent: req?.headers?.['user-agent'],
+    sessionId: req?.sessionID,
   });
 }

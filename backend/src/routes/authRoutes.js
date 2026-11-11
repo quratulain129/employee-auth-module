@@ -7,5 +7,6 @@ router.get('/google/callback', auth.googleCallback);
 router.get('/microsoft', auth.microsoftStart);
 router.get('/microsoft/callback', auth.microsoftCallback);
 router.get('/session', auth.sessionStatus);
-router.post('/logout', auth.logout); // POST because logout changes state; GET links could be triggered by other sites
+router.post('/logout', auth.logout); 
+// POST because logout changes state; GET links could be triggered by other sites
 export default router;

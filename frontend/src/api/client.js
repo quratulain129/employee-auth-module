@@ -1,5 +1,6 @@
 // All backend calls go through here. "credentials: 'include'" makes the browser send the session cookie to the backend origin.
-export const API_BASE = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+// When API_BASE is empty, requests are relative (works on localhost, LAN IPs, and other PCs).
+export const API_BASE = import.meta.env.VITE_API_BASE_URL || '';
 
 export async function apiFetch(path, options = {}) {
   const res = await fetch(`${API_BASE}${path}`, { credentials: 'include', ...options });

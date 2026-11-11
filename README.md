@@ -154,3 +154,23 @@ Method choices: login/callback are GET because browsers *navigate* to them and p
 
 ## 5. Limitations (honest list)
 Not executed end to end by the author; MemoryStore sessions; no CSRF token beyond SameSite+CORS+POST logout; no rate limiting; file logging only; Google `hd` behaviour must be verified with a real Workspace account; Microsoft e-mail claim may be absent (UPN is used for display only). See `docs/06`.
+
+## 6. Database (PostgreSQL in Docker)
+docker run --name auth-postgres -e POSTGRES_USER=authapp -e POSTGRES_PASSWORD=<your-password> \
+-e POSTGRES_DB=authdb -p 5434:5432 -v auth-pgdata:/var/lib/postgresql/data -d postgres:16
+Set DATABASE_URL in backend/.env. The tables are created automatically at startup from backend/schema.sql.
+Next time: docker start auth-postgres (Docker Desktop must be open).
+
+## 7. Cap Detection Tool (OpenVINO / YOLO)
+An integrated object detection tool available after employee authentication:
+- **Location**: Profile page has a launcher card linking to `/tools/cap-detection` (also available via topbar navigation).
+- **Functionality**: Real-time webcam detection (with optional mirrored/inverted camera view) and image file upload.
+- **Model weights**: Place `best.pt` or `best_openvino_model/` inside `backend/models/`. When weights are not yet placed, the system runs in fallback mode without breaking.
+- **Classes**: Class 0 (`No cap`), Class 1 (`cap`).
+
+## 7. Cap Detection Tool (OpenVINO / YOLO)
+An integrated object detection tool available after employee authentication:
+- **Location**: Profile page has a launcher card linking to `/tools/cap-detection` (also available via topbar navigation).
+- **Functionality**: Real-time webcam detection (with optional mirrored/inverted camera view) and image file upload.
+- **Model weights**: Place `best.pt` or `best_openvino_model/` inside `backend/models/`. When weights are not yet placed, the system runs in fallback mode without breaking.
+- **Classes**: Class 0 (`No cap`), Class 1 (`cap`).

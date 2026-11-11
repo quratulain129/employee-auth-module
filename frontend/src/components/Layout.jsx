@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../auth/AuthContext.jsx';
 
 export default function Layout({ children }) {
@@ -13,7 +13,29 @@ export default function Layout({ children }) {
   return (
     <div className="shell">
       <header className="topbar">
-        <span className="brand"><span className="brand-mark" aria-hidden="true" />Employee sign-in module</span>
+        <div className="topbar-left">
+          <Link to="/profile" className="brand-link">
+            <span className="brand-mark" aria-hidden="true" />
+            <span className="brand-title">Employee Portal</span>
+          </Link>
+          {status === 'authenticated' && (
+            <nav className="nav-links" aria-label="Portal Navigation">
+              <Link
+                to="/profile"
+                className={`nav-item ${pathname === '/profile' ? 'active' : ''}`}
+              >
+                Profile
+              </Link>
+              <Link
+                to="/tools/cap-detection"
+                className={`nav-item ${pathname.startsWith('/tools/cap-detection') ? 'active' : ''}`}
+              >
+                🧢 Cap Detection Tool
+              </Link>
+            </nav>
+          )}
+        </div>
+
         {status === 'authenticated' && (
           <div className="who">
             <span className="who-name">{user.name || user.email}</span>
@@ -22,7 +44,7 @@ export default function Layout({ children }) {
         )}
       </header>
       <main className="page">{children}</main>
-      <footer className="footer">Internal development prototype. Not an official Packages Limited portal.</footer>
+      <footer className="footer">Internal development prototype.</footer>
     </div>
   );
 }

@@ -3,8 +3,10 @@ import passport from 'passport';
 import { config } from '../config/env.js';
 import { googleAuthOptions } from '../providers/google.js';
 import { buildAuthRequest, redeemCode, statesMatch, MicrosoftAuthError } from '../providers/microsoft.js';
-import { checkDomain as evaluate, buildSessionUser, checkSession as getActiveUser } from './accessController.js';
-import { logAuthEvent, EVENTS } from '../services/logger.js';// ---- Where to send the browser afterwards (allowlisted; never a URL taken from the request => no open redirect) ----
+import { saveUser } from '../services/db.js';
+import { evaluate, buildSessionUser, getActiveUser } from '../services/accessControl.js';
+import { logAuthEvent, EVENTS } from '../services/logger.js';
+// ---- Where to send the browser afterwards (allowlisted; never a URL taken from the request => no open redirect) ----
 const pickClient = (v) => (v === 'xampp' ? 'xampp' : 'react');
 
 // Optional email typed on the login page. Only a plausible email is forwarded; it just pre-fills the provider's form.
@@ -14,13 +16,11 @@ const pickHint = (v) => (typeof v === 'string' && EMAIL_SHAPE.test(v.trim()) ? v
 function redirectTo(res, client, kind, reason) {
   const q = reason ? encodeURIComponent(reason) : '';
   if (client === 'xampp') {
-    const u = new URL(config.xamppTestUrl);
-    u.searchParams.set('result', kind);
-    if (reason) u.searchParams.set('reason', reason);
-    return res.redirect(u.toString());
+    const reasonParam = reason ? `&reason=${encodeURIComponent(reason)}` : '';
+    return res.redirect(`/auth-test.html?result=${encodeURIComponent(kind)}${reasonParam}`);
   }
   const paths = { success: '/profile', denied: `/access-denied?reason=${q}`, error: `/login?error=${q}` };
-  return res.redirect(`${config.frontendUrl}${paths[kind]}`);
+  return res.redirect(paths[kind]);
 }
 
 // Authorization failure: the person IS authenticated by the provider but not allowed in. No session is kept.
@@ -43,20 +43,21 @@ function providerErrorReason(query) {
 }
 
 // ---- Shared final step: authorize, then create the session ----
-function finishLogin(req, res, client, identity) {
+async function finishLogin(req, res, client, identity) {
   const decision = evaluate(identity);
   if (!decision.allowed) return deny(req, res, client, identity.provider, identity, decision.reason);
 
   const user = buildSessionUser(identity);
   // regenerate() issues a NEW session ID, so any ID an attacker planted before login becomes useless (session fixation defence).
+  const userId = await saveUser(user); // remember this person in the database (null if there is no database)
   req.session.regenerate((err) => {
     if (err) return fail(req, res, client, identity.provider, 'session_error');
     req.session.user = user;
     req.session.loginAt = Date.now();
+    req.session.userId = userId;
     req.session.save((saveErr) => {
       if (saveErr) return fail(req, res, client, identity.provider, 'session_error');
-      logAuthEvent(EVENTS.LOGIN_SUCCESS, { provider: user.provider, email: user.email, req });
-      redirectTo(res, client, 'success');
+      logAuthEvent(EVENTS.LOGIN_SUCCESS, { provider: user.provider, email: user.email, userId, req }); redirectTo(res, client, 'success');
     });
   });
 }
@@ -129,9 +130,13 @@ export function sessionStatus(req, res) {
 
 export function logout(req, res) {
   const user = req.session?.user;
+  const userId = req.session?.userId;
+  const loginAt = req.session?.loginAt;
   const finish = () => {
     res.clearCookie(config.session.cookieName);
-    if (user) logAuthEvent(EVENTS.LOGOUT, { provider: user.provider, email: user.email, req });
+    if (user) {
+      logAuthEvent(EVENTS.LOGOUT, { provider: user.provider, email: user.email, userId, durationSeconds: Math.round((Date.now() - loginAt) / 1000), req });
+    }
     res.json({ ok: true });
   };
   if (!req.session) return finish();

@@ -17,7 +17,7 @@ function getClient() {
         // Tenant-specific authority: only accounts from THIS directory can sign in.
         authority: `https://login.microsoftonline.com/${config.microsoft.tenantId}`,
       },
-      system: { loggerOptions: { loggerCallback: () => {}, piiLoggingEnabled: false } },
+      system: { loggerOptions: { loggerCallback: () => { }, piiLoggingEnabled: false } },
     });
   }
   return client;
@@ -65,5 +65,9 @@ export async function redeemCode({ code, saved }) {
   const claims = result?.idTokenClaims;
   if (!claims) throw new MicrosoftAuthError('no_id_token');
   if (claims.nonce !== saved.nonce) throw new MicrosoftAuthError('nonce_mismatch'); // replay protection
+  // The issuer must name the same tenant as the "tid" claim, so the two cannot disagree.
+  if (!claims.tid || typeof claims.iss !== 'string' || !claims.iss.toLowerCase().includes(String(claims.tid).toLowerCase())) {
+    throw new MicrosoftAuthError('issuer_mismatch');
+  }
   return normalizeMicrosoft(claims);
 }
